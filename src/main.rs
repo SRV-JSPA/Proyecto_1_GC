@@ -11,6 +11,8 @@ use crate::framebuffer::Framebuffer;
 use crate::maze::load_maze;
 use crate::player::{Player, eventos_jugador};
 use crate::caster::cast_ray;
+use rodio::{Sink, OutputStream};
+use std::fs::File;
 use std::io::BufReader;
 
 const FUENTE_NUMEROS: [[u8; 5]; 10] = [
@@ -58,11 +60,12 @@ fn dibujar_fps(framebuffer: &mut Framebuffer, fps: u32) {
 
 
 fn dibujar_celdas(framebuffer: &mut Framebuffer, xo: usize, yo: usize, tamaño_block: usize, celda: char) {
-    if celda == ' ' {
-        return;
+    match celda {
+        '+' => framebuffer.set_current_color(0xFFFFFF), 
+        '|' => framebuffer.set_current_color(0x66CCFF), 
+        '-' => framebuffer.set_current_color(0x003366), 
+        _ => return,
     }
-
-    framebuffer.set_current_color(0xFFDDDD);
 
     for x in xo..xo + tamaño_block {
         for y in yo..yo + tamaño_block {
@@ -124,7 +127,12 @@ fn render3d(framebuffer: &mut Framebuffer, player: &Player) {
         let stake_t = (hh - (altura_stake / 2.0)) as usize;
         let stake_b = (hh + (altura_stake / 2.0)) as usize;
 
-        framebuffer.set_current_color(0xFFFFFF);
+        match interseccion.impact {
+            '+' => framebuffer.set_current_color(0xFFFFFF), 
+            '|' => framebuffer.set_current_color(0x66CCFF), 
+            '-' => framebuffer.set_current_color(0x003366), 
+            _ => framebuffer.set_current_color(0xFFFFFF),  
+        }
 
         if stake_t < framebuffer.height && stake_b <= framebuffer.height {
             for y in stake_t..stake_b {
