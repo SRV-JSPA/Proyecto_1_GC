@@ -73,21 +73,23 @@ fn dibujar_celdas(framebuffer: &mut Framebuffer, xo: usize, yo: usize, tamaño_b
     }
 }
 
-fn render(framebuffer: &mut Framebuffer, player: &Player) {
+fn render(framebuffer: &mut Framebuffer, player: &Player, x: usize, y: usize, escala: f32) {
     let maze = load_maze("./maze.txt");
-    let tamaño_block = 100;
+    let tamaño_block = (100.0 * escala) as usize;
 
 
     for row in 0..maze.len() {
         for col in 0..maze[row].len() {
-            dibujar_celdas(framebuffer, col * tamaño_block, row * tamaño_block, tamaño_block, maze[row][col])
+            dibujar_celdas(framebuffer, x + col * tamaño_block, y + row * tamaño_block, tamaño_block, maze[row][col])
         }
     }
 
 
     framebuffer.set_current_color(0xFFDDD);
-    if player.pos.x >= 0.0 && player.pos.x < framebuffer.width as f32 && player.pos.y >= 0.0 && player.pos.y < framebuffer.height as f32 {
-        framebuffer.point(player.pos.x as usize, player.pos.y as usize);
+    let jugador_x = x + (player.pos.x * escala) as usize;
+    let jugador_y = y + (player.pos.y * escala) as usize;
+    if jugador_x < framebuffer.width && jugador_y < framebuffer.height {
+        framebuffer.point(jugador_x, jugador_y);
     }
 
 
@@ -176,6 +178,15 @@ fn main() {
         eventos_jugador(&window, &mut player);
 
         render3d(&mut framebuffer, &player);
+
+        let escala_minimapa = 0.1; 
+        let ancho_minimapa = (ancho_framebuffer as f32 * escala_minimapa) as usize;
+        let ancho_minimapa = (altura_framebuffer as f32 * escala_minimapa) as usize;
+        let minimapa_x = ancho_framebuffer - ancho_minimapa - 45;
+        let minimapa_y = 10;
+
+        
+        render(&mut framebuffer, &player, minimapa_x, minimapa_y, escala_minimapa);
 
         let duracion = tiempo_inicial.elapsed();
         let tiempo_frame = duracion.as_secs_f32();
