@@ -159,6 +159,9 @@ fn main() {
         fov: PI / 3.0
     };
 
+    let maze = load_maze("./maze.txt");
+    let tamaño_bloque = 100; 
+
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();
 
@@ -175,7 +178,7 @@ fn main() {
         framebuffer.clear();
 
 
-        eventos_jugador(&window, &mut player);
+        eventos_jugador(&window, &mut player, &maze, tamaño_bloque);
 
         render3d(&mut framebuffer, &player);
 
