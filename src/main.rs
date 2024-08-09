@@ -11,6 +11,8 @@ use crate::framebuffer::Framebuffer;
 use crate::maze::load_maze;
 use crate::player::{Player, eventos_jugador};
 use crate::caster::cast_ray;
+use std::io::BufReader;
+use rodio::OutputStream;
 
 fn dibujar_celdas(framebuffer: &mut Framebuffer, xo: usize, yo: usize, tamaño_block: usize, celda: char) {
     if celda == ' ' {
@@ -21,7 +23,9 @@ fn dibujar_celdas(framebuffer: &mut Framebuffer, xo: usize, yo: usize, tamaño_b
 
     for x in xo..xo + tamaño_block {
         for y in yo..yo + tamaño_block {
-            framebuffer.point(x, y);
+            if x < framebuffer.width && y < framebuffer.height {
+                framebuffer.point(x, y);
+            }
         }
     }
 }
@@ -39,7 +43,9 @@ fn render(framebuffer: &mut Framebuffer, player: &Player) {
 
 
     framebuffer.set_current_color(0xFFDDD);
-    framebuffer.point(player.pos.x as usize, player.pos.y as usize);
+    if player.pos.x >= 0.0 && player.pos.x < framebuffer.width as f32 && player.pos.y >= 0.0 && player.pos.y < framebuffer.height as f32 {
+        framebuffer.point(player.pos.x as usize, player.pos.y as usize);
+    }
 
 
     let num_rays = 5;
@@ -75,8 +81,10 @@ fn render3d(framebuffer: &mut Framebuffer, player: &Player) {
 
         framebuffer.set_current_color(0xFFFFFF);
 
-        for y in stake_t..stake_b {
-            framebuffer.point(i, y);
+        if stake_t < framebuffer.height && stake_b <= framebuffer.height {
+            for y in stake_t..stake_b {
+                framebuffer.point(i, y);
+            }
         }
     }
 }
@@ -106,6 +114,14 @@ fn main() {
         fov: PI / 3.0
     };
 
+    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+    let sink = rodio::Sink::try_new(&handle).unwrap();
+
+    let file = std::fs::File::open("assets/musica.wav").unwrap();
+    sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
+
+    sink.play();
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
         framebuffer.clear();
 
@@ -120,4 +136,6 @@ fn main() {
 
         std::thread::sleep(frame_delay);
     }
+    
+    sink.stop();
 }
