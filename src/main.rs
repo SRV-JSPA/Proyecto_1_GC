@@ -6,13 +6,56 @@ mod caster;
 use minifb::{Window, WindowOptions, Key};
 use nalgebra_glm::Vec2;
 use std::f32::consts::PI;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use crate::framebuffer::Framebuffer;
 use crate::maze::load_maze;
 use crate::player::{Player, eventos_jugador};
 use crate::caster::cast_ray;
 use std::io::BufReader;
-use rodio::OutputStream;
+
+const FUENTE_NUMEROS: [[u8; 5]; 10] = [
+    [0b01110, 0b10001, 0b10001, 0b10001, 0b01110], 
+    [0b00100, 0b01100, 0b00100, 0b00100, 0b01110], 
+    [0b01110, 0b10001, 0b00110, 0b01000, 0b11111], 
+    [0b01110, 0b10001, 0b00110, 0b10001, 0b01110], 
+    [0b00100, 0b01100, 0b10100, 0b11111, 0b00100], 
+    [0b11111, 0b10000, 0b11110, 0b00001, 0b11110], 
+    [0b01110, 0b10000, 0b11110, 0b10001, 0b01110], 
+    [0b11111, 0b00010, 0b00100, 0b01000, 0b10000], 
+    [0b01110, 0b10001, 0b01110, 0b10001, 0b01110], 
+    [0b01110, 0b10001, 0b01111, 0b00001, 0b01110], 
+];
+
+fn dibujar_digitos(framebuffer: &mut Framebuffer, x: usize, y: usize, digito: u8) {
+    if digito > 9 {
+        return;
+    }
+    for (row, bits) in FUENTE_NUMEROS[digito as usize].iter().enumerate() {
+        for col in 0..5 {
+            if bits & (1 << (4 - col)) != 0 {
+                if x + col < framebuffer.width && y + row < framebuffer.height {
+                    framebuffer.point(x + col, y + row);
+                }
+            }
+        }
+    }
+}
+
+fn dibujar_fps(framebuffer: &mut Framebuffer, fps: u32) {
+    let mut fps_string = fps.to_string();
+    let eje_x = 10;
+    let eje_y = 10;
+    let tamaño_digito = 6;
+
+    framebuffer.set_current_color(0xFFFFFF);
+
+    for (i, ch) in fps_string.chars().enumerate() {
+        if let Some(digito) = ch.to_digit(10) {
+            dibujar_digitos(framebuffer, eje_x + i * tamaño_digito, eje_y, digito as u8);
+        }
+    }
+}
+
 
 fn dibujar_celdas(framebuffer: &mut Framebuffer, xo: usize, yo: usize, tamaño_block: usize, celda: char) {
     if celda == ' ' {
@@ -121,8 +164,12 @@ fn main() {
     sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
 
     sink.play();
+    let mut tiempo = Instant::now();
+    let mut contador_frame = 0;
+    let mut fps = 0;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let tiempo_inicial = Instant::now();
         framebuffer.clear();
 
 
@@ -130,11 +177,26 @@ fn main() {
 
         render3d(&mut framebuffer, &player);
 
+        let duracion = tiempo_inicial.elapsed();
+        let tiempo_frame = duracion.as_secs_f32();
+        fps = (1.0 / tiempo_frame) as u32;
+        dibujar_fps(&mut framebuffer, fps);
+
         window
             .update_with_buffer(&framebuffer.buffer, ancho_framebuffer, altura_framebuffer)
             .unwrap();
 
         std::thread::sleep(frame_delay);
+
+        contador_frame += 1;
+        if contador_frame % 60 == 0 {
+            println!("FPS: {:.2}", fps);
+        }
+
+        if tiempo.elapsed() >= Duration::from_secs(1) {
+            tiempo = Instant::now();
+            contador_frame = 0;
+        }
     }
     
     sink.stop();
