@@ -189,7 +189,8 @@ fn main() {
     let mut player = Player {
         pos: Vec2::new(150.0, 150.0),
         a: PI / 3.0,
-        fov: PI / 3.0
+        fov: PI / 3.0,
+        mouse_sens: 0.005,
     };
 
     let maze = load_maze("./maze.txt");
@@ -207,6 +208,7 @@ fn main() {
     let mut contador_frame = 0;
     let mut fps = 0;
     let mut tipo_render = true;
+    let mut posicion_mouse = Vec2::new(0.0, 0.0);
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         if window.is_key_down(Key::C) {
@@ -217,7 +219,7 @@ fn main() {
         framebuffer.clear();
 
 
-        eventos_jugador(&window, &mut player, &maze, tamaño_bloque, &mut gilrs);
+        eventos_jugador(&window, &mut player, &maze, tamaño_bloque, &mut gilrs, &mut posicion_mouse);
 
         if tipo_render {
             render3d(&mut framebuffer, &player, &texturas);
