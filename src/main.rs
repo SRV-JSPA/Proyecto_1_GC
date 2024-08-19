@@ -227,11 +227,11 @@ fn main() {
             let escala_minimapa = 0.1; 
             let ancho_minimapa = (ancho_framebuffer as f32 * escala_minimapa) as usize;
             let ancho_minimapa = (altura_framebuffer as f32 * escala_minimapa) as usize;
-            let minimapa_x = ancho_framebuffer - ancho_minimapa - 45;
+            let minimapa_x = ancho_framebuffer - ancho_minimapa - 140;
             let minimapa_y = 10;
             render(&mut framebuffer, &player, minimapa_x, minimapa_y, escala_minimapa);
         } else {
-            let escala_completa = 1.0;
+            let escala_completa = 0.60;
             render(&mut framebuffer, &player, 0, 0, escala_completa);
         }
 
