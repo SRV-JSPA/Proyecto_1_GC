@@ -206,24 +206,32 @@ fn main() {
     let mut tiempo = Instant::now();
     let mut contador_frame = 0;
     let mut fps = 0;
+    let mut tipo_render = true;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        if window.is_key_down(Key::C) {
+            tipo_render = !tipo_render;
+            std::thread::sleep(std::time::Duration::from_millis(200));
+        }
         let tiempo_inicial = Instant::now();
         framebuffer.clear();
 
 
         eventos_jugador(&window, &mut player, &maze, tamaño_bloque, &mut gilrs);
 
-        render3d(&mut framebuffer, &player, &texturas);
+        if tipo_render {
+            render3d(&mut framebuffer, &player, &texturas);
 
-        let escala_minimapa = 0.1; 
-        let ancho_minimapa = (ancho_framebuffer as f32 * escala_minimapa) as usize;
-        let ancho_minimapa = (altura_framebuffer as f32 * escala_minimapa) as usize;
-        let minimapa_x = ancho_framebuffer - ancho_minimapa - 45;
-        let minimapa_y = 10;
-
-        
-        render(&mut framebuffer, &player, minimapa_x, minimapa_y, escala_minimapa);
+            let escala_minimapa = 0.1; 
+            let ancho_minimapa = (ancho_framebuffer as f32 * escala_minimapa) as usize;
+            let ancho_minimapa = (altura_framebuffer as f32 * escala_minimapa) as usize;
+            let minimapa_x = ancho_framebuffer - ancho_minimapa - 45;
+            let minimapa_y = 10;
+            render(&mut framebuffer, &player, minimapa_x, minimapa_y, escala_minimapa);
+        } else {
+            let escala_completa = 1.0;
+            render(&mut framebuffer, &player, 0, 0, escala_completa);
+        }
 
         let duracion = tiempo_inicial.elapsed();
         let tiempo_frame = duracion.as_secs_f32();
