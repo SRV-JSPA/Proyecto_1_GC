@@ -15,6 +15,7 @@ use rodio::{Sink, OutputStream};
 use std::fs::File;
 use std::io::BufReader;
 use gilrs::Gilrs;
+use image::{DynamicImage, GenericImageView, Pixel};
 
 const FUENTE_NUMEROS: [[u8; 5]; 10] = [
     [0b01110, 0b10001, 0b10001, 0b10001, 0b01110], 
@@ -28,6 +29,22 @@ const FUENTE_NUMEROS: [[u8; 5]; 10] = [
     [0b01110, 0b10001, 0b01110, 0b10001, 0b01110], 
     [0b01110, 0b10001, 0b01111, 0b00001, 0b01110], 
 ];
+
+struct Texturas {
+    pared1: DynamicImage,
+    pared2: DynamicImage,
+    pared3: DynamicImage,
+}
+
+impl Texturas {
+    fn load() -> Self {
+        Self {
+            pared1: image::open("images/mario.jpg").unwrap(),
+            pared2: image::open("images/ladrillo.jpeg").unwrap(),
+            pared3: image::open("images/madera.jpg").unwrap(),
+        }
+    }
+}
 
 fn dibujar_digitos(framebuffer: &mut Framebuffer, x: usize, y: usize, digito: u8) {
     if digito > 9 {
@@ -106,7 +123,7 @@ fn render(framebuffer: &mut Framebuffer, player: &Player, x: usize, y: usize, es
     }
 }
 
-fn render3d(framebuffer: &mut Framebuffer, player: &Player) {
+fn render3d(framebuffer: &mut Framebuffer, player: &Player, texturas: &Texturas) {
     let maze = load_maze("./maze.txt");
     let tamaño_block = 100;
     let num_rays = framebuffer.width;
@@ -128,15 +145,21 @@ fn render3d(framebuffer: &mut Framebuffer, player: &Player) {
         let stake_t = (hh - (altura_stake / 2.0)) as usize;
         let stake_b = (hh + (altura_stake / 2.0)) as usize;
 
-        match interseccion.impact {
-            '+' => framebuffer.set_current_color(0xFFFFFF), 
-            '|' => framebuffer.set_current_color(0x66CCFF), 
-            '-' => framebuffer.set_current_color(0x003366), 
-            _ => framebuffer.set_current_color(0xFFFFFF),  
-        }
+        let texturas = match interseccion.impact {
+            '+' => &texturas.pared1,
+            '|' => &texturas.pared2,
+            '-' => &texturas.pared3,
+            _ => &texturas.pared1,
+        };
 
         if stake_t < framebuffer.height && stake_b <= framebuffer.height {
+            let textura_altura = texturas.height();
             for y in stake_t..stake_b {
+                let textura_y = ((y - stake_t) as f32 / (stake_b - stake_t) as f32 * textura_altura as f32) as u32;
+                let pixel = texturas.get_pixel((i % texturas.width() as usize) as u32, textura_y);
+                let rgba = pixel.to_rgba();
+                let color = ((rgba[0] as u32) << 16) | ((rgba[1] as u32) << 8) | (rgba[2] as u32);
+                framebuffer.set_current_color(color);
                 framebuffer.point(i, y);
             }
         }
@@ -150,6 +173,7 @@ fn main() {
     let ancho_framebuffer = 1300;
     let altura_framebuffer = 900;
     let frame_delay = Duration::from_millis(16);
+    let texturas = Texturas::load();
 
     let mut framebuffer = Framebuffer::new(ancho_framebuffer, altura_framebuffer);
 
@@ -190,7 +214,7 @@ fn main() {
 
         eventos_jugador(&window, &mut player, &maze, tamaño_bloque, &mut gilrs);
 
-        render3d(&mut framebuffer, &player);
+        render3d(&mut framebuffer, &player, &texturas);
 
         let escala_minimapa = 0.1; 
         let ancho_minimapa = (ancho_framebuffer as f32 * escala_minimapa) as usize;
